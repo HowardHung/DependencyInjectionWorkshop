@@ -22,13 +22,7 @@ namespace DependencyInjectionWorkshop.Models
             {
                 throw new FailedTooManyTimesException() { AccountId = accountId };
             }
-            //getPassword
-            string passwordFromDb;
-            using (var connection = new SqlConnection("my connection string"))
-            {
-                passwordFromDb = connection.Query<string>("spGetUserPassword", new { Id = accountId },
-                    commandType: CommandType.StoredProcedure).SingleOrDefault();
-            }
+            var passwordFromDb = GetPasswordFromDb(accountId);
 
             //hash password
             var crypt = new System.Security.Cryptography.SHA256Managed();
@@ -67,6 +61,19 @@ namespace DependencyInjectionWorkshop.Models
                 slackClient.PostMessage(response1 => { }, "my channel", message, "my bot name");
                 return false;
             }
+        }
+
+        private static string GetPasswordFromDb(string accountId)
+        {
+            //getPassword
+            string passwordFromDb;
+            using (var connection = new SqlConnection("my connection string"))
+            {
+                passwordFromDb = connection.Query<string>("spGetUserPassword", new {Id = accountId},
+                    commandType: CommandType.StoredProcedure).SingleOrDefault();
+            }
+
+            return passwordFromDb;
         }
     }
 
