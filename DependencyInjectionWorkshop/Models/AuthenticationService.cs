@@ -14,9 +14,7 @@ namespace DependencyInjectionWorkshop.Models
 
         public bool Verify(string accountId, string password,string otp)
         {
-
-            var httpClient = new HttpClient() { BaseAddress = new Uri("http://joey.com/") };
-            var isLocked = _failedCounter.GetAccountIsLocked(accountId, httpClient);
+            var isLocked = _failedCounter.GetAccountIsLocked(accountId);
             if (isLocked)
             {
                 throw new FailedTooManyTimesException() { AccountId = accountId };
@@ -25,17 +23,17 @@ namespace DependencyInjectionWorkshop.Models
 
             var hashedPassword = _sha256Adapter.GetHashedPassword(password);
 
-            var currentOtp = _otpService.GetCurrentOtp(accountId, httpClient);
+            var currentOtp = _otpService.GetCurrentOtp(accountId);
             if (passwordFromDb == hashedPassword && currentOtp == otp)
             {
-                _failedCounter.ResetFailedCount(accountId, httpClient);
+                _failedCounter.ResetFailedCount(accountId);
                 return true;
             }
             else
             {
-                _failedCounter.AddFailedCount(accountId, httpClient);
+                _failedCounter.AddFailedCount(accountId);
 
-                LogFailedCount(accountId, httpClient);
+                LogFailedCount(accountId);
 
                 //notify
                 _slackAdapter.Notify(accountId);
@@ -43,17 +41,17 @@ namespace DependencyInjectionWorkshop.Models
             }
         }
 
-        private void LogFailedCount(string accountId, HttpClient httpClient)
+        private void LogFailedCount(string accountId)
         {
-            var failedCount = GetFailedCount(accountId, httpClient);
+            var failedCount = GetFailedCount(accountId);
             _nLogAdapter.Info( $"accountId:{accountId} failed times:{failedCount}");
         }
 
-        private static int GetFailedCount(string accountId, HttpClient httpClient)
+        private static int GetFailedCount(string accountId)
         {
             //紀錄失敗次數 
             var failedCountResponse =
-                httpClient.PostAsJsonAsync("api/failedCounter/GetFailedCount", accountId).Result;
+                new HttpClient() { BaseAddress = new Uri("http://joey.com/") }.PostAsJsonAsync("api/failedCounter/GetFailedCount", accountId).Result;
 
             failedCountResponse.EnsureSuccessStatusCode();
 
