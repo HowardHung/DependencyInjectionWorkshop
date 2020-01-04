@@ -27,37 +27,59 @@ namespace DependencyInjectionWorkshopTests
         private INotification _notification;
         private IFailedCounter _failedCounter;
         private AuthenticationService _authenticationService;
+        private const string DefaultAccountId = "joey";
 
-        private void ShouldBeValid()
+
+        private void ShouldBeValid(string accountId, string password, string otp)
         {
-            var isValid = _authenticationService.Verify("joey", "1234", "123456");
+            var isValid = _authenticationService.Verify(accountId, password, otp);
 
             Assert.IsTrue(isValid);
         }
 
-        private void GivenPasswordFromDb()
+
+        private void GivenHashedPassword(string password, string hashedPassword)
         {
-            _profile.GetPassword("joey").Returns("my hashed password");
+            _hash.Compute(password).Returns(hashedPassword);
         }
 
-        private void GivenOtp()
+        private void GivenOtp(string accountId, string otp)
         {
-            _otpService.GetCurrentOtp("joey").Returns("123456");
+            _otpService.GetCurrentOtp(accountId).Returns(otp);
         }
 
-        private void GivenHashedPassword()
+
+        private void GivenPasswordFromDb(string accountId, string passwordFromDb)
         {
-            _hash.Compute("1234").Returns("my hashed password");
+            _profile.GetPassword(accountId).Returns(passwordFromDb);
+        }
+
+
+        [Test]
+        public void is_invalid()
+        {
+            GivenPasswordFromDb(DefaultAccountId, "my hashed password");
+            GivenHashedPassword("1234", "my hashed password");
+            GivenOtp(DefaultAccountId, "123456");
+
+            ShouldBeInvalid(DefaultAccountId, "1234", "wrong otp");
         }
 
         [Test]
         public void is_valid()
         {
-            GivenPasswordFromDb();
-            GivenHashedPassword();
-            GivenOtp();
+            GivenPasswordFromDb(DefaultAccountId, "my hashed password");
+            GivenHashedPassword("1234", "my hashed password");
+            GivenOtp(DefaultAccountId, "123456");
 
-            ShouldBeValid();
+            ShouldBeValid(DefaultAccountId, "1234", "123456");
+        }
+
+        private void ShouldBeInvalid(string accountId, string password, string otp)
+        {
+            var isValid = _authenticationService.Verify(accountId, password, otp);
+
+            Assert.IsFalse(isValid);
         }
     }
 }
