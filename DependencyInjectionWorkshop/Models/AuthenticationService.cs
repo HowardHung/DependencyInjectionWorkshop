@@ -29,9 +29,7 @@ namespace DependencyInjectionWorkshop.Models
             var currentOtp = GetCurrentOtp(accountId, httpClient);
             if (passwordFromDb == hashedPassword && currentOtp == otp)
             {
-                //驗證成功，重設失敗次數
-                var resetResponse = httpClient.PostAsJsonAsync("api/failedCounter/Reset", accountId).Result;
-                resetResponse.EnsureSuccessStatusCode();
+                ResetFailedCount(accountId, httpClient);
                 return true;
             }
             else
@@ -46,6 +44,13 @@ namespace DependencyInjectionWorkshop.Models
                 slackClient.PostMessage(response1 => { }, "my channel", message, "my bot name");
                 return false;
             }
+        }
+
+        private static void ResetFailedCount(string accountId, HttpClient httpClient)
+        {
+            //驗證成功，重設失敗次數
+            var resetResponse = httpClient.PostAsJsonAsync("api/failedCounter/Reset", accountId).Result;
+            resetResponse.EnsureSuccessStatusCode();
         }
 
         private static string GetCurrentOtp(string accountId, HttpClient httpClient)
