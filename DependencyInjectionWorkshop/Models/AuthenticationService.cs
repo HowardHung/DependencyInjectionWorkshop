@@ -36,15 +36,7 @@ namespace DependencyInjectionWorkshop.Models
             {
                 AddFailedCount(accountId, httpClient);
 
-                //紀錄失敗次數 
-                var failedCountResponse =
-                    httpClient.PostAsJsonAsync("api/failedCounter/GetFailedCount", accountId).Result;
-
-                failedCountResponse.EnsureSuccessStatusCode();
-
-                var failedCount = failedCountResponse.Content.ReadAsAsync<int>().Result;
-                var logger = NLog.LogManager.GetCurrentClassLogger();
-                logger.Info($"accountId:{accountId} failed times:{failedCount}");
+                LogFailedCount(accountId, httpClient);
 
                 //notify
                 string message = $"account:{accountId} try to login failed";
@@ -52,6 +44,19 @@ namespace DependencyInjectionWorkshop.Models
                 slackClient.PostMessage(response1 => { }, "my channel", message, "my bot name");
                 return false;
             }
+        }
+
+        private static void LogFailedCount(string accountId, HttpClient httpClient)
+        {
+            //紀錄失敗次數 
+            var failedCountResponse =
+                httpClient.PostAsJsonAsync("api/failedCounter/GetFailedCount", accountId).Result;
+
+            failedCountResponse.EnsureSuccessStatusCode();
+
+            var failedCount = failedCountResponse.Content.ReadAsAsync<int>().Result;
+            var logger = NLog.LogManager.GetCurrentClassLogger();
+            logger.Info($"accountId:{accountId} failed times:{failedCount}");
         }
 
         private static void AddFailedCount(string accountId, HttpClient httpClient)
