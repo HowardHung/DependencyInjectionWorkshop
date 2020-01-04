@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net.Http;
-using System.Text;
 using SlackAPI;
 
 namespace DependencyInjectionWorkshop.Models
@@ -8,6 +7,7 @@ namespace DependencyInjectionWorkshop.Models
     public class AuthenticationService
     {
         private readonly ProfileDao _profileDao = new ProfileDao();
+        private readonly Sha256Adapter _sha256Adapter = new Sha256Adapter();
 
         public bool Verify(string accountId, string password,string otp)
         {
@@ -20,7 +20,7 @@ namespace DependencyInjectionWorkshop.Models
             }
             var passwordFromDb = _profileDao.GetPasswordFromDb(accountId);
 
-            var hashedPassword = GetHashedPassword(password);
+            var hashedPassword = _sha256Adapter.GetHashedPassword(password);
 
             var currentOtp = GetCurrentOtp(accountId, httpClient);
             if (passwordFromDb == hashedPassword && currentOtp == otp)
@@ -94,21 +94,6 @@ namespace DependencyInjectionWorkshop.Models
 
             var currentOtp = response.Content.ReadAsAsync<string>().Result;
             return currentOtp;
-        }
-
-        private string GetHashedPassword(string password)
-        {
-            //hash password
-            var crypt = new System.Security.Cryptography.SHA256Managed();
-            var hash = new StringBuilder();
-            var crypto = crypt.ComputeHash(Encoding.UTF8.GetBytes(password));
-            foreach (var theByte in crypto)
-            {
-                hash.Append(theByte.ToString("x2"));
-            }
-
-            var hashedPassword = hash.ToString();
-            return hashedPassword;
         }
     }
 
