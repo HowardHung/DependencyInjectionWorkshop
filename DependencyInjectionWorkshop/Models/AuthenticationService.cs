@@ -1,8 +1,4 @@
-﻿using Dapper;
-using System;
-using System.Data;
-using System.Data.SqlClient;
-using System.Linq;
+﻿using System;
 using System.Net.Http;
 using System.Text;
 using SlackAPI;
@@ -11,6 +7,8 @@ namespace DependencyInjectionWorkshop.Models
 {
     public class AuthenticationService
     {
+        private readonly ProfileDao _profileDao = new ProfileDao();
+
         public bool Verify(string accountId, string password,string otp)
         {
 
@@ -20,7 +18,7 @@ namespace DependencyInjectionWorkshop.Models
             {
                 throw new FailedTooManyTimesException() { AccountId = accountId };
             }
-            var passwordFromDb = GetPasswordFromDb(accountId);
+            var passwordFromDb = _profileDao.GetPasswordFromDb(accountId);
 
             var hashedPassword = GetHashedPassword(password);
 
@@ -98,7 +96,7 @@ namespace DependencyInjectionWorkshop.Models
             return currentOtp;
         }
 
-        private static string GetHashedPassword(string password)
+        private string GetHashedPassword(string password)
         {
             //hash password
             var crypt = new System.Security.Cryptography.SHA256Managed();
@@ -111,19 +109,6 @@ namespace DependencyInjectionWorkshop.Models
 
             var hashedPassword = hash.ToString();
             return hashedPassword;
-        }
-
-        private static string GetPasswordFromDb(string accountId)
-        {
-            //getPassword
-            string passwordFromDb;
-            using (var connection = new SqlConnection("my connection string"))
-            {
-                passwordFromDb = connection.Query<string>("spGetUserPassword", new {Id = accountId},
-                    commandType: CommandType.StoredProcedure).SingleOrDefault();
-            }
-
-            return passwordFromDb;
         }
     }
 
