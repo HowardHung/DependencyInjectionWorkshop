@@ -3,14 +3,36 @@ using System.Net.Http;
 
 namespace DependencyInjectionWorkshop.Models
 {
+    
     public class AuthenticationService
     {
-        private readonly ProfileDao _profileDao = new ProfileDao();
-        private readonly Sha256Adapter _sha256Adapter = new Sha256Adapter();
-        private readonly OtpService _otpService = new OtpService();
-        private readonly SlackAdapter _slackAdapter = new SlackAdapter();
-        private readonly FailedCounter _failedCounter = new FailedCounter();
-        private readonly NLogAdapter _nLogAdapter = new NLogAdapter();
+        private readonly ProfileDao _profileDao;
+        private readonly Sha256Adapter _sha256Adapter;
+        private readonly OtpService _otpService;
+        private readonly SlackAdapter _slackAdapter;
+        private readonly FailedCounter _failedCounter;
+        private readonly NLogAdapter _nLogAdapter;
+
+        public AuthenticationService(ProfileDao profileDao, Sha256Adapter sha256Adapter, OtpService otpService, SlackAdapter slackAdapter, FailedCounter failedCounter, NLogAdapter nLogAdapter)
+        {
+            _profileDao = profileDao;
+            _sha256Adapter = sha256Adapter;
+            _otpService = otpService;
+            _slackAdapter = slackAdapter;
+            _failedCounter = failedCounter;
+            _nLogAdapter = nLogAdapter;
+        }
+
+        public AuthenticationService()
+        {
+            _profileDao = new ProfileDao();
+            _sha256Adapter = new Sha256Adapter();
+            _otpService = new OtpService();
+            _slackAdapter = new SlackAdapter();
+            _failedCounter = new FailedCounter();
+            _nLogAdapter = new NLogAdapter();
+        }
+
 
         public bool Verify(string accountId, string password,string otp)
         {
