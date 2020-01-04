@@ -34,9 +34,7 @@ namespace DependencyInjectionWorkshop.Models
             }
             else
             {
-                //驗證失敗，累計失敗次數
-                var addFailedCountResponse = httpClient.PostAsJsonAsync("api/failedCounter/Add", accountId).Result;
-                addFailedCountResponse.EnsureSuccessStatusCode();
+                AddFailedCount(accountId, httpClient);
 
                 //notify
                 string message = $"account:{accountId} try to login failed";
@@ -44,6 +42,13 @@ namespace DependencyInjectionWorkshop.Models
                 slackClient.PostMessage(response1 => { }, "my channel", message, "my bot name");
                 return false;
             }
+        }
+
+        private static void AddFailedCount(string accountId, HttpClient httpClient)
+        {
+            //驗證失敗，累計失敗次數
+            var addFailedCountResponse = httpClient.PostAsJsonAsync("api/failedCounter/Add", accountId).Result;
+            addFailedCountResponse.EnsureSuccessStatusCode();
         }
 
         private static void ResetFailedCount(string accountId, HttpClient httpClient)
