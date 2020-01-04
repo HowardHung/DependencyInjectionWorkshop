@@ -10,6 +10,7 @@ namespace DependencyInjectionWorkshop.Models
         private readonly OtpService _otpService = new OtpService();
         private readonly SlackAdapter _slackAdapter = new SlackAdapter();
         private readonly FailedCounter _failedCounter = new FailedCounter();
+        private readonly NLogAdapter _nLogAdapter = new NLogAdapter();
 
         public bool Verify(string accountId, string password,string otp)
         {
@@ -45,13 +46,7 @@ namespace DependencyInjectionWorkshop.Models
         private static void LogFailedCount(string accountId, HttpClient httpClient)
         {
             var failedCount = GetFailedCount(accountId, httpClient);
-            Log(accountId, failedCount);
-        }
-
-        private static void Log(string accountId, int failedCount)
-        {
-            var logger = NLog.LogManager.GetCurrentClassLogger();
-            logger.Info($"accountId:{accountId} failed times:{failedCount}");
+            _nLogAdapter.Log(accountId, failedCount);
         }
 
         private static int GetFailedCount(string accountId, HttpClient httpClient)
