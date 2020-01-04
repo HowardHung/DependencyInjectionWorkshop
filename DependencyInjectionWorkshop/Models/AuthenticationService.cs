@@ -10,9 +10,20 @@ namespace DependencyInjectionWorkshop.Models
 {
     public class AuthenticationService
     {
-        public bool Verify()
+        public bool Verify(string accountId, string password,string otp)
         {
-            return false;
+            var passwordFromDb = GetPassword(accountId);
+            var hashedPassword  = GetHash(password);
+            var currentOtp = GetOtp(accountId);
+
+            if (passwordFromDb == hashedPassword && currentOtp == otp)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
         public string GetPassword(string accountId)
         {
