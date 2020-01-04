@@ -2,32 +2,7 @@
 
 namespace DependencyInjectionWorkshop.Models
 {
-    public class NotificationDecorator : IAuthenticationService
-    {
-        private readonly IAuthenticationService _authenticationService;
-        private readonly INotification _notification;
-
-        public NotificationDecorator(IAuthenticationService authenticationService, INotification notification)
-        {
-            _notification = notification;
-            _authenticationService = authenticationService;
-        }
-
-        public bool Verify(string accountId, string password, string otp)
-        {
-            var isValid = _authenticationService.Verify(accountId, password, otp);
-            if (!isValid) Notify(accountId);
-
-            return isValid;
-        }
-
-        private void Notify(string accountId)
-        {
-            _notification.Notify(accountId, $"account:{accountId} try to login failed");
-        }
-    }
-
-    public class AuthenticationService : IAuthenticationService
+    public class Authentication : IAuthenticationService
     {
         private readonly IFailedCounter _failedCounter;
         private readonly IHash _hash;
@@ -37,8 +12,8 @@ namespace DependencyInjectionWorkshop.Models
         private readonly IProfile _profile;
         //private readonly NotificationDecorator _notificationDecorator;
 
-        public AuthenticationService(IFailedCounter failedCounter, ILogger logger, IOtpService otpService,
-            IProfile profile, IHash hash, INotification notification)
+        public Authentication(IFailedCounter failedCounter, ILogger logger, IOtpService otpService,
+            IProfile profile, IHash hash)
         {
             _failedCounter = failedCounter;
             _logger = logger;
@@ -48,7 +23,7 @@ namespace DependencyInjectionWorkshop.Models
             //_notificationDecorator = new NotificationDecorator(notification);
         }
 
-        public AuthenticationService()
+        public Authentication()
         {
             _profile = new ProfileDao();
             _hash = new Sha256Adapter();
