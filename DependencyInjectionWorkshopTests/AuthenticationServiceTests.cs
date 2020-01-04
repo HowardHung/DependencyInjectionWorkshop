@@ -1,24 +1,13 @@
-﻿using DependencyInjectionWorkshop.Models;
+﻿using System;
+using DependencyInjectionWorkshop.Models;
 using NSubstitute;
 using NUnit.Framework;
-using System;
 
 namespace DependencyInjectionWorkshopTests
 {
-
     [TestFixture]
     public class AuthenticationServiceTests
     {
-        private const string DefaultAccountId = "joey";
-        private const int DefaultFailedCount = 91;
-        private IAuthenticationService _authenticationService;
-        private IFailedCounter _failedCounter;
-        private IHash _hash;
-        private ILogger _logger;
-        private INotification _notification;
-        private IOtpService _otpService;
-        private IProfile _profile;
-
         [SetUp]
         public void SetUp()
         {
@@ -30,63 +19,18 @@ namespace DependencyInjectionWorkshopTests
             _failedCounter = Substitute.For<IFailedCounter>();
             _authenticationService =
                 new AuthenticationService(_failedCounter, _logger, _otpService, _profile, _hash, _notification);
+            _authenticationService = new NotificationDecorator(_authenticationService, _notification);
         }
 
-        [Test]
-        public void reset_failed_count_when_valid()
-        {
-            WhenValid();
-            ShouldResetFailedCount(DefaultAccountId);
-        }
-
-        [Test]
-        public void is_invalid()
-        {
-            GivenPasswordFromDb(DefaultAccountId, "my hashed password");
-            GivenHashedPassword("1234", "my hashed password");
-            GivenOtp(DefaultAccountId, "123456");
-
-            ShouldBeInvalid(DefaultAccountId, "1234", "wrong otp");
-        }
-
-        [Test]
-        public void is_valid()
-        {
-            GivenPasswordFromDb(DefaultAccountId, "my hashed password");
-            GivenHashedPassword("1234", "my hashed password");
-            GivenOtp(DefaultAccountId, "123456");
-
-            ShouldBeValid(DefaultAccountId, "1234", "123456");
-        }
-
-        [Test]
-        public void add_failed_count_when_invalid()
-        {
-            WhenInvalid();
-            ShouldAddFailedCount(DefaultAccountId);
-        }
-
-        [Test]
-        public void log_failed_count_when_invalid()
-        {
-            GivenFailedCount(DefaultFailedCount);
-            WhenInvalid();
-            LogShouldContains(DefaultAccountId, DefaultFailedCount.ToString());
-        }
-
-        [Test]
-        public void notify_user_when_invalid()
-        {
-            WhenInvalid();
-            ShouldNotify(DefaultAccountId);
-        }
-
-        [Test]
-        public void account_is_locked()
-        {
-            GivenAccountIsLocked(true);
-            ShouldThrow<FailedTooManyTimesException>();
-        }
+        private const string DefaultAccountId = "joey";
+        private const int DefaultFailedCount = 91;
+        private IAuthenticationService _authenticationService;
+        private IFailedCounter _failedCounter;
+        private IHash _hash;
+        private ILogger _logger;
+        private INotification _notification;
+        private IOtpService _otpService;
+        private IProfile _profile;
 
         private void GivenAccountIsLocked(bool isLocked)
         {
@@ -122,7 +66,7 @@ namespace DependencyInjectionWorkshopTests
         private void ShouldAddFailedCount(string accountId)
         {
             _failedCounter.Received(1)
-                          .AddFailedCount(accountId);
+                .AddFailedCount(accountId);
         }
 
         private void ShouldBeInvalid(string accountId, string password, string otp)
@@ -147,7 +91,7 @@ namespace DependencyInjectionWorkshopTests
         private void ShouldResetFailedCount(string accountId)
         {
             _failedCounter.Received(1)
-                          .Reset(accountId);
+                .Reset(accountId);
         }
 
         private void ShouldThrow<TException>() where TException : Exception
@@ -172,6 +116,62 @@ namespace DependencyInjectionWorkshopTests
             GivenOtp(DefaultAccountId, "123456");
 
             _authenticationService.Verify(DefaultAccountId, "1234", "123456");
+        }
+
+        [Test]
+        public void account_is_locked()
+        {
+            GivenAccountIsLocked(true);
+            ShouldThrow<FailedTooManyTimesException>();
+        }
+
+        [Test]
+        public void add_failed_count_when_invalid()
+        {
+            WhenInvalid();
+            ShouldAddFailedCount(DefaultAccountId);
+        }
+
+        [Test]
+        public void is_invalid()
+        {
+            GivenPasswordFromDb(DefaultAccountId, "my hashed password");
+            GivenHashedPassword("1234", "my hashed password");
+            GivenOtp(DefaultAccountId, "123456");
+
+            ShouldBeInvalid(DefaultAccountId, "1234", "wrong otp");
+        }
+
+        [Test]
+        public void is_valid()
+        {
+            GivenPasswordFromDb(DefaultAccountId, "my hashed password");
+            GivenHashedPassword("1234", "my hashed password");
+            GivenOtp(DefaultAccountId, "123456");
+
+            ShouldBeValid(DefaultAccountId, "1234", "123456");
+        }
+
+        [Test]
+        public void log_failed_count_when_invalid()
+        {
+            GivenFailedCount(DefaultFailedCount);
+            WhenInvalid();
+            LogShouldContains(DefaultAccountId, DefaultFailedCount.ToString());
+        }
+
+        [Test]
+        public void notify_user_when_invalid()
+        {
+            WhenInvalid();
+            ShouldNotify(DefaultAccountId);
+        }
+
+        [Test]
+        public void reset_failed_count_when_valid()
+        {
+            WhenValid();
+            ShouldResetFailedCount(DefaultAccountId);
         }
     }
 }

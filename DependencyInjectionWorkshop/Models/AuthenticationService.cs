@@ -2,31 +2,28 @@
 
 namespace DependencyInjectionWorkshop.Models
 {
-    public class NotificationDecorator:IAuthenticationService
+    public class NotificationDecorator : IAuthenticationService
     {
-        private readonly INotification _notification;
         private readonly IAuthenticationService _authenticationService;
+        private readonly INotification _notification;
 
-        public NotificationDecorator(INotification notification, IAuthenticationService authenticationService)
+        public NotificationDecorator(IAuthenticationService authenticationService, INotification notification)
         {
             _notification = notification;
             _authenticationService = authenticationService;
         }
 
+        public bool Verify(string accountId, string password, string otp)
+        {
+            var isValid = _authenticationService.Verify(accountId, password, otp);
+            if (!isValid) Notify(accountId);
+
+            return isValid;
+        }
+
         private void Notify(string accountId)
         {
             _notification.Notify(accountId, $"account:{accountId} try to login failed");
-        }
-
-        public bool Verify(string accountId, string password, string otp)
-        {
-            var isValid = _authenticationService.Verify(accountId,password,otp);
-            if (!isValid)
-            {
-                Notify(accountId);
-            }
-
-            return isValid;
         }
     }
 
@@ -36,6 +33,7 @@ namespace DependencyInjectionWorkshop.Models
         private readonly IHash _hash;
         private readonly ILogger _logger;
         private readonly IOtpService _otpService;
+
         private readonly IProfile _profile;
         //private readonly NotificationDecorator _notificationDecorator;
 
