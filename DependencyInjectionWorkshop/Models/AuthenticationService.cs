@@ -43,10 +43,10 @@ namespace DependencyInjectionWorkshop.Models
             }
         }
 
-        private static void LogFailedCount(string accountId, HttpClient httpClient)
+        private void LogFailedCount(string accountId, HttpClient httpClient)
         {
             var failedCount = GetFailedCount(accountId, httpClient);
-            _nLogAdapter.Log(accountId, failedCount);
+            _nLogAdapter.Info( $"accountId:{accountId} failed times:{failedCount}");
         }
 
         private static int GetFailedCount(string accountId, HttpClient httpClient)
