@@ -12,7 +12,13 @@ namespace DependencyInjectionWorkshop.Models
     {
         public bool Verify(string accountId, string password,string otp)
         {
-            var passwordFromDb = GetPassword(accountId);
+            string passwordFromDb;
+            using (var connection = new SqlConnection("my connection string"))
+            {
+                passwordFromDb = connection.Query<string>("spGetUserPassword", new { Id = accountId },
+                    commandType: CommandType.StoredProcedure).SingleOrDefault();
+            }
+
             var hashedPassword  = GetHash(password);
             var currentOtp = GetOtp(accountId);
 
@@ -25,17 +31,7 @@ namespace DependencyInjectionWorkshop.Models
                 return false;
             }
         }
-        public string GetPassword(string accountId)
-        {
-            using (var connection = new SqlConnection("my connection string"))
-            {
-                var password = connection.Query<string>("spGetUserPassword", new { Id = accountId },
-                    commandType: CommandType.StoredProcedure).SingleOrDefault();
 
-                return password;
-            }
-
-        }
         public string GetOtp(string accountId)
         {
             var httpClient = new HttpClient() { BaseAddress = new Uri("http://joey.com/") };
