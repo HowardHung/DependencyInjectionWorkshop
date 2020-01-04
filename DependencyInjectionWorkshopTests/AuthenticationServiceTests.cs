@@ -11,7 +11,7 @@ namespace DependencyInjectionWorkshopTests
     {
         private const string DefaultAccountId = "joey";
         private const int DefaultFailedCount = 91;
-        private AuthenticationService _authenticationService;
+        private IAuthenticationService _authenticationService;
         private IFailedCounter _failedCounter;
         private IHash _hash;
         private ILogger _logger;

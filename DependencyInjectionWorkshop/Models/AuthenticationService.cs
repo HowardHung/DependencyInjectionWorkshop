@@ -2,7 +2,7 @@
 
 namespace DependencyInjectionWorkshop.Models
 {
-    public class AuthenticationService
+    public class AuthenticationService : IAuthenticationService
     {
         private readonly IFailedCounter _failedCounter;
         private readonly IHash _hash;
