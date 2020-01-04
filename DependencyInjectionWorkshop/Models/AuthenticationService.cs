@@ -40,22 +40,17 @@ namespace DependencyInjectionWorkshop.Models
             }
 
             var currentOtp = response.Content.ReadAsAsync<string>().Result;
-
             if (passwordFromDb == hashedPassword && currentOtp == otp)
             {
                 return true;
             }
             else
             {
-                Notify($"account:{accountId} try to login failed");
+                string message = $"account:{accountId} try to login failed";
+                var slackClient = new SlackClient("my api token");
+                slackClient.PostMessage(response1 => { }, "my channel", message, "my bot name");
                 return false;
             }
-        }
-
-        public void Notify(string message)
-        {
-            var slackClient = new SlackClient("my api token");
-            slackClient.PostMessage(response => { }, "my channel", message, "my bot name");
         }
     }
 }
