@@ -10,5 +10,12 @@ namespace DependencyInjectionWorkshop.Models
             var resetResponse = httpClient.PostAsJsonAsync("api/failedCounter/Reset", accountId).Result;
             resetResponse.EnsureSuccessStatusCode();
         }
+
+        public void AddFailedCount(string accountId, HttpClient httpClient)
+        {
+            //驗證失敗，累計失敗次數
+            var addFailedCountResponse = httpClient.PostAsJsonAsync("api/failedCounter/Add", accountId).Result;
+            addFailedCountResponse.EnsureSuccessStatusCode();
+        }
     }
 }
