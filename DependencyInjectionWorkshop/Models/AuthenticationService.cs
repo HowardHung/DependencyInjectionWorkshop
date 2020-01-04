@@ -2,14 +2,42 @@
 
 namespace DependencyInjectionWorkshop.Models
 {
+    public class NotificationDecorator:IAuthenticationService
+    {
+        private readonly INotification _notification;
+        private readonly IAuthenticationService _authenticationService;
+
+        public NotificationDecorator(INotification notification, IAuthenticationService authenticationService)
+        {
+            _notification = notification;
+            _authenticationService = authenticationService;
+        }
+
+        private void Notify(string accountId)
+        {
+            _notification.Notify(accountId, $"account:{accountId} try to login failed");
+        }
+
+        public bool Verify(string accountId, string password, string otp)
+        {
+            var isValid = _authenticationService.Verify(accountId,password,otp);
+            if (!isValid)
+            {
+                Notify(accountId);
+            }
+
+            return isValid;
+        }
+    }
+
     public class AuthenticationService : IAuthenticationService
     {
         private readonly IFailedCounter _failedCounter;
         private readonly IHash _hash;
         private readonly ILogger _logger;
-        private readonly INotification _notification;
         private readonly IOtpService _otpService;
         private readonly IProfile _profile;
+        //private readonly NotificationDecorator _notificationDecorator;
 
         public AuthenticationService(IFailedCounter failedCounter, ILogger logger, IOtpService otpService,
             IProfile profile, IHash hash, INotification notification)
@@ -19,7 +47,7 @@ namespace DependencyInjectionWorkshop.Models
             _otpService = otpService;
             _profile = profile;
             _hash = hash;
-            _notification = notification;
+            //_notificationDecorator = new NotificationDecorator(notification);
         }
 
         public AuthenticationService()
@@ -27,9 +55,9 @@ namespace DependencyInjectionWorkshop.Models
             _profile = new ProfileDao();
             _hash = new Sha256Adapter();
             _otpService = new OtpService();
-            _notification = new SlackAdapter();
             _failedCounter = new FailedCounter();
             _logger = new NLogAdapter();
+            //_notificationDecorator = new NotificationDecorator();
         }
 
         public bool Verify(string accountId, string password, string otp)
@@ -57,7 +85,7 @@ namespace DependencyInjectionWorkshop.Models
 
             LogFailedCount(accountId);
 
-            _notification.Notify(accountId, $"account:{accountId} try to login failed");
+            //_notificationDecorator.Notify(accountId);
 
             return false;
         }
