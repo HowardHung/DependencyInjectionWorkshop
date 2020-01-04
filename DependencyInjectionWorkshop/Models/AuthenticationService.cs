@@ -8,6 +8,7 @@ namespace DependencyInjectionWorkshop.Models
     {
         private readonly ProfileDao _profileDao = new ProfileDao();
         private readonly Sha256Adapter _sha256Adapter = new Sha256Adapter();
+        private readonly OtpService _otpService = new OtpService();
 
         public bool Verify(string accountId, string password,string otp)
         {
@@ -22,7 +23,7 @@ namespace DependencyInjectionWorkshop.Models
 
             var hashedPassword = _sha256Adapter.GetHashedPassword(password);
 
-            var currentOtp = GetCurrentOtp(accountId, httpClient);
+            var currentOtp = _otpService.GetCurrentOtp(accountId, httpClient);
             if (passwordFromDb == hashedPassword && currentOtp == otp)
             {
                 ResetFailedCount(accountId, httpClient);
@@ -81,19 +82,6 @@ namespace DependencyInjectionWorkshop.Models
             //驗證成功，重設失敗次數
             var resetResponse = httpClient.PostAsJsonAsync("api/failedCounter/Reset", accountId).Result;
             resetResponse.EnsureSuccessStatusCode();
-        }
-
-        private static string GetCurrentOtp(string accountId, HttpClient httpClient)
-        {
-            //get otp
-            var response = httpClient.PostAsJsonAsync("api/otps", accountId).Result;
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"web api error, accountId:{accountId}");
-            }
-
-            var currentOtp = response.Content.ReadAsAsync<string>().Result;
-            return currentOtp;
         }
     }
 
