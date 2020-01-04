@@ -26,14 +26,7 @@ namespace DependencyInjectionWorkshop.Models
 
             var hashedPassword = GetHashedPassword(password);
 
-            //get otp
-            var response = httpClient.PostAsJsonAsync("api/otps", accountId).Result;
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"web api error, accountId:{accountId}");
-            }
-
-            var currentOtp = response.Content.ReadAsAsync<string>().Result;
+            var currentOtp = GetCurrentOtp(accountId, httpClient);
             if (passwordFromDb == hashedPassword && currentOtp == otp)
             {
                 //驗證成功，重設失敗次數
@@ -53,6 +46,19 @@ namespace DependencyInjectionWorkshop.Models
                 slackClient.PostMessage(response1 => { }, "my channel", message, "my bot name");
                 return false;
             }
+        }
+
+        private static string GetCurrentOtp(string accountId, HttpClient httpClient)
+        {
+            //get otp
+            var response = httpClient.PostAsJsonAsync("api/otps", accountId).Result;
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new Exception($"web api error, accountId:{accountId}");
+            }
+
+            var currentOtp = response.Content.ReadAsAsync<string>().Result;
+            return currentOtp;
         }
 
         private static string GetHashedPassword(string password)
