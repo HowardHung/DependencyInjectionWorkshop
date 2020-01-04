@@ -27,5 +27,17 @@ namespace DependencyInjectionWorkshop.Models
             var isLocked = isLockedResponse.Content.ReadAsAsync<bool>().Result;
             return isLocked;
         }
+
+        public int GetFailedCount(string accountId)
+        {
+            //紀錄失敗次數 
+            var failedCountResponse =
+                new HttpClient() { BaseAddress = new Uri("http://joey.com/") }.PostAsJsonAsync("api/failedCounter/GetFailedCount", accountId).Result;
+
+            failedCountResponse.EnsureSuccessStatusCode();
+
+            var failedCount = failedCountResponse.Content.ReadAsAsync<int>().Result;
+            return failedCount;
+        }
     }
 }
