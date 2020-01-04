@@ -3,73 +3,80 @@ using System.Net.Http;
 
 namespace DependencyInjectionWorkshop.Models
 {
-    
+
+
     public class AuthenticationService
     {
-        private readonly IProfileDao _profileDao;
-        private readonly ISha256Adapter _sha256Adapter;
-        private readonly IOtpService _otpService;
-        private readonly ISlackAdapter _slackAdapter;
         private readonly IFailedCounter _failedCounter;
-        private readonly INLogAdapter _nLogAdapter;
+        private readonly ILogger _logger;
+        private readonly IOtpService _otpService;
+        private readonly IProfile _profile;
+        private readonly IHash _hash;
+        private readonly INotification _notification;
 
-        public AuthenticationService(IProfileDao profileDao, ISha256Adapter sha256Adapter, IOtpService otpService, ISlackAdapter slackAdapter, IFailedCounter failedCounter, INLogAdapter nLogAdapter)
+        public AuthenticationService(IFailedCounter failedCounter, ILogger logger, IOtpService otpService,
+            IProfile profile, IHash hash, INotification notification)
         {
-            _profileDao = profileDao;
-            _sha256Adapter = sha256Adapter;
-            _otpService = otpService;
-            _slackAdapter = slackAdapter;
             _failedCounter = failedCounter;
-            _nLogAdapter = nLogAdapter;
+            _logger = logger;
+            _otpService = otpService;
+            _profile = profile;
+            _hash = hash;
+            _notification = notification;
         }
 
         public AuthenticationService()
         {
-            _profileDao = new ProfileDao();
-            _sha256Adapter = new Sha256Adapter();
+            _profile = new ProfileDao();
+            _hash = new Sha256Adapter();
             _otpService = new OtpService();
-            _slackAdapter = new SlackAdapter();
+            _notification = new SlackAdapter();
             _failedCounter = new FailedCounter();
-            _nLogAdapter = new NLogAdapter();
+            _logger = new NLogAdapter();
         }
 
-
-        public bool Verify(string accountId, string password,string otp)
+        public bool Verify(string accountId, string password, string otp)
         {
+            //check account locked
             var isLocked = _failedCounter.GetAccountIsLocked(accountId);
             if (isLocked)
             {
                 throw new FailedTooManyTimesException() { AccountId = accountId };
             }
-            var passwordFromDb = _profileDao.GetPasswordFromDb(accountId);
 
-            var hashedPassword = _sha256Adapter.GetHashedPassword(password);
+            var passwordFromDb = _profile.GetPassword(accountId);
+
+            var hashedPassword = _hash.Compute(password);
 
             var currentOtp = _otpService.GetCurrentOtp(accountId);
+
+            //compare
             if (passwordFromDb == hashedPassword && currentOtp == otp)
             {
-                _failedCounter.ResetFailedCount(accountId);
+                _failedCounter.Reset(accountId);
+
                 return true;
             }
             else
             {
+                //失敗
                 _failedCounter.AddFailedCount(accountId);
 
                 LogFailedCount(accountId);
 
-                //notify
-                _slackAdapter.Notify(accountId);
+                _notification.Notify(accountId);
+
                 return false;
             }
         }
 
         private void LogFailedCount(string accountId)
         {
+            //紀錄失敗次數 
             var failedCount = _failedCounter.GetFailedCount(accountId);
-            _nLogAdapter.Info( $"accountId:{accountId} failed times:{failedCount}");
+            _logger.Info($"accountId:{accountId} failed times:{failedCount}");
         }
     }
-
     public class FailedTooManyTimesException : Exception
     {
         public string AccountId { get; set; }

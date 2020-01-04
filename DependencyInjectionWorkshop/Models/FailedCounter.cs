@@ -5,7 +5,7 @@ namespace DependencyInjectionWorkshop.Models
 {
     public interface IFailedCounter
     {
-        void ResetFailedCount(string accountId);
+        void Reset(string accountId);
         void AddFailedCount(string accountId);
         bool GetAccountIsLocked(string accountId);
         int GetFailedCount(string accountId);
@@ -13,7 +13,7 @@ namespace DependencyInjectionWorkshop.Models
 
     public class FailedCounter : IFailedCounter
     {
-        public void ResetFailedCount(string accountId)
+        public void Reset(string accountId)
         {
             //驗證成功，重設失敗次數
             var resetResponse = new HttpClient() { BaseAddress = new Uri("http://joey.com/") }.PostAsJsonAsync("api/failedCounter/Reset", accountId).Result;
