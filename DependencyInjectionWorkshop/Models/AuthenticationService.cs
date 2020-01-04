@@ -13,6 +13,7 @@ namespace DependencyInjectionWorkshop.Models
     {
         public bool Verify(string accountId, string password,string otp)
         {
+
             //getPassword
             string passwordFromDb;
             using (var connection = new SqlConnection("my connection string"))
@@ -42,10 +43,18 @@ namespace DependencyInjectionWorkshop.Models
             var currentOtp = response.Content.ReadAsAsync<string>().Result;
             if (passwordFromDb == hashedPassword && currentOtp == otp)
             {
+                //驗證成功，重設失敗次數
+                var resetResponse = httpClient.PostAsJsonAsync("api/failedCounter/Reset", accountId).Result;
+                resetResponse.EnsureSuccessStatusCode();
                 return true;
             }
             else
             {
+                //驗證失敗，累計失敗次數
+                var addFailedCountResponse = httpClient.PostAsJsonAsync("api/failedCounter/Add", accountId).Result;
+                addFailedCountResponse.EnsureSuccessStatusCode();
+
+                //notify
                 string message = $"account:{accountId} try to login failed";
                 var slackClient = new SlackClient("my api token");
                 slackClient.PostMessage(response1 => { }, "my channel", message, "my bot name");
