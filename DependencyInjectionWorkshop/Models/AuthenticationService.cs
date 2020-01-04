@@ -18,7 +18,8 @@ namespace DependencyInjectionWorkshop.Models
             var isLockedResponse = httpClient.PostAsJsonAsync("api/failedCounter/IsLocked", accountId).Result;
 
             isLockedResponse.EnsureSuccessStatusCode();
-            if (isLockedResponse.Content.ReadAsAsync<bool>().Result)
+            var isLocked = isLockedResponse.Content.ReadAsAsync<bool>().Result;
+            if (isLocked)
             {
                 throw new FailedTooManyTimesException() { AccountId = accountId };
             }
