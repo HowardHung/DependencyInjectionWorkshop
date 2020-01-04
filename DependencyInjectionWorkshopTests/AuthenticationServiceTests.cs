@@ -141,7 +141,7 @@ namespace DependencyInjectionWorkshopTests
 
         private void ShouldNotify(string accountId)
         {
-            _notification.Received(1).Notify(accountId, $"account:{accountId} try to login failed", Arg.Any<string>());
+            _notification.Received(1).Notify(accountId, Arg.Any<string>());
         }
 
         private void ShouldResetFailedCount(string accountId)
