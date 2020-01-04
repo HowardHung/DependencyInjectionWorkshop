@@ -9,6 +9,7 @@ namespace DependencyInjectionWorkshop.Models
         private readonly Sha256Adapter _sha256Adapter = new Sha256Adapter();
         private readonly OtpService _otpService = new OtpService();
         private readonly SlackAdapter _slackAdapter = new SlackAdapter();
+        private readonly FailedCounter _failedCounter = new FailedCounter();
 
         public bool Verify(string accountId, string password,string otp)
         {
@@ -26,7 +27,7 @@ namespace DependencyInjectionWorkshop.Models
             var currentOtp = _otpService.GetCurrentOtp(accountId, httpClient);
             if (passwordFromDb == hashedPassword && currentOtp == otp)
             {
-                ResetFailedCount(accountId, httpClient);
+                _failedCounter.ResetFailedCount(accountId, httpClient);
                 return true;
             }
             else
@@ -68,13 +69,6 @@ namespace DependencyInjectionWorkshop.Models
             //驗證失敗，累計失敗次數
             var addFailedCountResponse = httpClient.PostAsJsonAsync("api/failedCounter/Add", accountId).Result;
             addFailedCountResponse.EnsureSuccessStatusCode();
-        }
-
-        private static void ResetFailedCount(string accountId, HttpClient httpClient)
-        {
-            //驗證成功，重設失敗次數
-            var resetResponse = httpClient.PostAsJsonAsync("api/failedCounter/Reset", accountId).Result;
-            resetResponse.EnsureSuccessStatusCode();
         }
     }
 
