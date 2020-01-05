@@ -3,14 +3,6 @@ using System.Net.Http;
 
 namespace DependencyInjectionWorkshop.Models
 {
-    public interface IFailedCounter
-    {
-        void Reset(string accountId);
-        void AddFailedCount(string accountId);
-        bool GetAccountIsLocked(string accountId);
-        int GetFailedCount(string accountId);
-    }
-
     public class FailedCounter : IFailedCounter
     {
         public void Reset(string accountId)

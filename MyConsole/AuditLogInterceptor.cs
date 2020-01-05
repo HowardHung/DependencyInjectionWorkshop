@@ -1,4 +1,5 @@
-﻿using Castle.DynamicProxy;
+﻿using System;
+using Castle.DynamicProxy;
 using System.Linq;
 using DependencyInjectionWorkshop.Models;
 
@@ -18,15 +19,25 @@ namespace MyConsole
 
         public void Intercept(IInvocation invocation)
         {
-            var currentUser = _context.GetUser();
-            var methodName = invocation.Method.Name;
-            var parameters = string.Join("|", invocation.Arguments.Select(x => (x ?? "").ToString()));
-            _logger.Info($"[Audit method:{methodName}] user:{currentUser.Name} invoke with parameters:{parameters}");
+            if (Attribute.GetCustomAttribute(invocation.Method,typeof(AuditLogAttribute))is AuditLogAttribute auditLogAttribute)
+            {
+                var currentUser = _context.GetUser();
+                var methodName = invocation.Method.Name;
+                var parameters = string.Join("|", invocation.Arguments.Select(x => (x ?? "").ToString()));
+                _logger.Info($"[Audit method:{methodName}] user:{currentUser.Name} invoke with parameters:{parameters}");
 
-            invocation.Proceed();
-            var returnValue = invocation.ReturnValue;
-            _logger.Info($"[Audit] return value:{returnValue}");
+                invocation.Proceed();
+                var returnValue = invocation.ReturnValue;
+                _logger.Info($"[Audit] return value:{returnValue}");
+            }
+            else
+            {
+                invocation.Proceed();
+            }
+            
 
         }
+
     }
+
 }
