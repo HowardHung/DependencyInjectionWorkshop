@@ -33,8 +33,28 @@ namespace MyConsole
             builder.RegisterDecorator<FailedCounterDecorator, IAuthentication>();
             builder.RegisterDecorator<LogDecorator, IAuthentication>();
             builder.RegisterDecorator<NotificationDecorator, IAuthentication>();
+            builder.RegisterDecorator<LogMethodInfoDecorator, IAuthentication>();
+
 
             _container = builder.Build();
+        }
+    }
+
+    internal class LogMethodInfoDecorator : AuthenticationDecoratorBase
+    {
+        private ILogger _logger;
+
+        public LogMethodInfoDecorator(IAuthentication authentication, ILogger logger) : base(authentication)
+        {
+            _logger = logger;
+        }
+
+        public override bool Verify(string accountId, string password, string otp)
+        {
+            _logger.Info($"parameter {accountId} | {password} | {otp}");
+            var isValid = base.Verify(accountId, password, otp);
+            _logger.Info($"return value {isValid}");
+            return isValid;
         }
     }
 
