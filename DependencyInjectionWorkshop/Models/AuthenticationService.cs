@@ -1,7 +1,11 @@
 ﻿using SlackAPI;
 using System;
+using System.Data;
+using System.Data.SqlClient;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
+using Dapper;
 
 namespace DependencyInjectionWorkshop.Models
 {
@@ -11,10 +15,15 @@ namespace DependencyInjectionWorkshop.Models
         {
             throw new NotImplementedException();
         }
-        public void Notify(string message)
+        public string GetPassword(string accountId)
         {
-            var slackClient = new SlackClient("my api token");
-            slackClient.PostMessage(response => { }, "my channel", message, "my bot name");
+            using (var connection = new SqlConnection("my connection string"))
+            {
+                var password = connection.Query<string>("spGetUserPassword", new { Id = accountId },
+                    commandType: CommandType.StoredProcedure).SingleOrDefault();
+
+                return password;
+            }
         }
         public string GetHash(string plainText)
         {
