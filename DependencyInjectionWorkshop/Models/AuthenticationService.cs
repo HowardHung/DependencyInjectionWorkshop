@@ -59,6 +59,10 @@ namespace DependencyInjectionWorkshop.Models
                 //failed
                 var addFailedCountResponse = httpClient.PostAsJsonAsync("api/failedCounter/Add", accountId).Result;
                 addFailedCountResponse.EnsureSuccessStatusCode();
+                //log
+                var failedCount = failedCountResponse.Content.ReadAsAsync<int>().Result;
+                var logger = NLog.LogManager.GetCurrentClassLogger();
+                logger.Info($"accountId:{accountId} failed times:{failedCount}");
 
                 var message = $"account:{accountId} try to login failed";
                 var slackClient = new SlackClient("my api token");
