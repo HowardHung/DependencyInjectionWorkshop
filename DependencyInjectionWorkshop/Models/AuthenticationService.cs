@@ -13,7 +13,17 @@ namespace DependencyInjectionWorkshop.Models
     {
         public bool Verify(string accountId, string password, string otp)
         {
-            throw new NotImplementedException();
+            var passwordFromDb = GetPassword(accountId);
+            var hashedPassword = GetHash(password);
+            var currentOtp = GetOtp(accountId);
+            if (passwordFromDb==hashedPassword&&currentOtp == otp)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
         public string GetPassword(string accountId)
         {
