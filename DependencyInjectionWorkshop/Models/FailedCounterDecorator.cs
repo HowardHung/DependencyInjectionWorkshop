@@ -13,6 +13,7 @@
 
         public bool Verify(string accountId, string password, string otp)
         {
+            CheckAccountLock(accountId);
             var isValid = _authentication.Verify(accountId, password, otp);
             if (isValid)
                 Reset(accountId);
@@ -30,6 +31,12 @@
         private void AddFailCount(string accountId)
         {
             _failedCounter.AddFailedCount(accountId);
+        }
+
+        private void CheckAccountLock(string accountId)
+        {
+            var isLocked = _failedCounter.GetAccountIsLocked(accountId);
+            if (isLocked) throw new FailedTooManyTimesException {AccountId = accountId};
         }
     }
 }

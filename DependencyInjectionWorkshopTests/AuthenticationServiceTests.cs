@@ -19,8 +19,9 @@ namespace DependencyInjectionWorkshopTests
             _failedCounter = Substitute.For<IFailedCounter>();
             _authentication =
                 new Authentication(_failedCounter, _logger, _otpService, _profile, _hash);
-            _authentication = new AuthenticationDecorator(_authentication, _notification);
             _authentication = new FailedCounterDecorator(_authentication, _failedCounter);
+            _authentication = new LogDecorator(_authentication, _logger, _failedCounter);
+            _authentication = new NotificationDecorator(_authentication, _notification);
         }
 
         private const string DefaultAccountId = "joey";
@@ -151,6 +152,23 @@ namespace DependencyInjectionWorkshopTests
             GivenOtp(DefaultAccountId, "123456");
 
             ShouldBeValid(DefaultAccountId, "1234", "123456");
+        }
+
+        [Test]
+        public void isValid_Order()
+        {
+            GivenPasswordFromDb(DefaultAccountId, "my hashed password");
+            GivenHashedPassword("1234", "my hashed password");
+            GivenOtp(DefaultAccountId, "123456");
+
+            _authentication.Verify(DefaultAccountId, "1234", "wrong otp");
+
+            Received.InOrder(() =>
+            {
+                _failedCounter.AddFailedCount(DefaultAccountId);
+                _logger.Info(Arg.Is<string>(m => m.Contains(DefaultAccountId)));
+                _notification.Notify(DefaultAccountId, Arg.Any<string>());
+            });
         }
 
         [Test]

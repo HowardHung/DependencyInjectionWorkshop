@@ -15,12 +15,12 @@
         }
     }
 
-    public class AuthenticationDecorator : AuthenticationDecoratorBase
+    public class NotificationDecorator : AuthenticationDecoratorBase
     {
         private readonly IAuthentication _authentication;
         private readonly INotification _notification;
 
-        public AuthenticationDecorator(IAuthentication authentication, INotification notification) : base(
+        public NotificationDecorator(IAuthentication authentication, INotification notification) : base(
             authentication)
         {
             _notification = notification;
