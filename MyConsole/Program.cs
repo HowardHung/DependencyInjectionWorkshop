@@ -1,28 +1,23 @@
-﻿using DependencyInjectionWorkshop.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
 using Autofac;
+using DependencyInjectionWorkshop.Models;
 
 namespace MyConsole
 {
-    class Program
+    internal class Program
     {
         private static IContainer _container;
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             RegisterContainer();
             var authentication = _container.Resolve<IAuthentication>();
             var isValid = authentication.Verify("joey", "abc", "wrong otp");
             Console.WriteLine($"result:{isValid}");
             Console.ReadKey();
-
         }
 
-        private static void  RegisterContainer()
+        private static void RegisterContainer()
         {
             var builder = new ContainerBuilder();
 
@@ -35,9 +30,9 @@ namespace MyConsole
 
             builder.RegisterType<AuthenticationService>().As<IAuthentication>();
 
-            builder.RegisterDecorator<FailedCounterDecorator,IAuthentication>();
-            builder.RegisterDecorator<LogDecorator,IAuthentication>();
-            builder.RegisterDecorator<NotificationDecorator,IAuthentication>();
+            builder.RegisterDecorator<FailedCounterDecorator, IAuthentication>();
+            builder.RegisterDecorator<LogDecorator, IAuthentication>();
+            builder.RegisterDecorator<NotificationDecorator, IAuthentication>();
 
             _container = builder.Build();
         }
@@ -54,14 +49,14 @@ namespace MyConsole
 
     internal class FakeSlack : INotification
     {
-        public void PushMessage(string message)
-        {
-            Console.WriteLine(message);
-        }
-
         public void Notify(string accountId, string message)
         {
             PushMessage($"{nameof(Notify)}, accountId:{accountId}, message:{message}");
+        }
+
+        public void PushMessage(string message)
+        {
+            Console.WriteLine(message);
         }
     }
 
