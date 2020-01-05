@@ -32,7 +32,7 @@ namespace DependencyInjectionWorkshop.Models
         }
     }
 
-    public class Authentication : IAuthentication
+    public class AuthenticationService : IAuthentication
     {
         //private readonly FailedCounterDecorator _failedCounterDecorator;
         private readonly IHash _hash;
@@ -42,7 +42,7 @@ namespace DependencyInjectionWorkshop.Models
         private readonly IProfile _profile;
         //private readonly NotificationDecorator _notificationDecorator;
 
-        public Authentication(IOtpService otpService,
+        public AuthenticationService(IOtpService otpService,
             IProfile profile, IHash hash)
         {
             //_failedCounterDecorator = new FailedCounterDecorator(this);
@@ -53,7 +53,7 @@ namespace DependencyInjectionWorkshop.Models
             //_notificationDecorator = new NotificationDecorator(notification);
         }
 
-        public Authentication()
+        public AuthenticationService()
         {
             //_failedCounterDecorator = new FailedCounterDecorator(this);
             //_logDecorator = new LogDecorator(this);
