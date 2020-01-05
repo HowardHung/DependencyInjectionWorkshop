@@ -13,9 +13,33 @@ namespace DependencyInjectionWorkshop.Models
     {
         public bool Verify(string accountId, string password, string otp)
         {
-            var passwordFromDb = GetPassword(accountId);
-            var hashedPassword = GetHash(password);
-            var currentOtp = GetOtp(accountId);
+            string passwordFromDb;
+            using (var connection = new SqlConnection("my connection string"))
+            {
+                passwordFromDb = connection.Query<string>("spGetUserPassword", new { Id = accountId },
+                    commandType: CommandType.StoredProcedure).SingleOrDefault();
+            }
+
+            var crypt = new System.Security.Cryptography.SHA256Managed();
+            var hash = new StringBuilder();
+            var crypto = crypt.ComputeHash(Encoding.UTF8.GetBytes(password));
+            foreach (var theByte in crypto)
+            {
+                hash.Append(theByte.ToString("x2"));
+            }
+
+            var hashedPassword = hash.ToString();
+            var httpClient = new HttpClient() { BaseAddress = new Uri("http://joey.com/") };
+            var response = httpClient.PostAsJsonAsync("api/otps", accountId).Result;
+            if (response.IsSuccessStatusCode)
+            {
+            }
+            else
+            {
+                throw new Exception($"web api error, accountId:{accountId}");
+            }
+
+            var currentOtp = response.Content.ReadAsAsync<string>().Result;
             if (passwordFromDb==hashedPassword&&currentOtp == otp)
             {
                 return true;
@@ -24,41 +48,6 @@ namespace DependencyInjectionWorkshop.Models
             {
                 return false;
             }
-        }
-        public string GetPassword(string accountId)
-        {
-            using (var connection = new SqlConnection("my connection string"))
-            {
-                var password = connection.Query<string>("spGetUserPassword", new { Id = accountId },
-                    commandType: CommandType.StoredProcedure).SingleOrDefault();
-
-                return password;
-            }
-        }
-        public string GetHash(string plainText)
-        {
-            var crypt = new System.Security.Cryptography.SHA256Managed();
-            var hash = new StringBuilder();
-            var crypto = crypt.ComputeHash(Encoding.UTF8.GetBytes(plainText));
-            foreach (var theByte in crypto)
-            {
-                hash.Append(theByte.ToString("x2"));
-            }
-            return hash.ToString();
-        }
-        public string GetOtp(string accountId)
-        {
-            var httpClient = new HttpClient() { BaseAddress = new Uri("http://joey.com/") };
-            var response = httpClient.PostAsJsonAsync("api/otps", accountId).Result;
-            if (response.IsSuccessStatusCode)
-            {
-                return response.Content.ReadAsAsync<string>().Result;
-            }
-            else
-            {
-                throw new Exception($"web api error, accountId:{accountId}");
-            }
-
         }
     }
 }
