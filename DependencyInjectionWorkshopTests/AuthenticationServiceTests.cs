@@ -20,6 +20,7 @@ namespace DependencyInjectionWorkshopTests
             _authenticationService =
                 new Authentication(_failedCounter, _logger, _otpService, _profile, _hash);
             _authenticationService = new NotificationDecorator(_authenticationService, _notification);
+            _authenticationService = new FailedCounterDecorator(_authenticationService, _failedCounter);
         }
 
         private const string DefaultAccountId = "joey";

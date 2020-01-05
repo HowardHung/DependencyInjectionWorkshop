@@ -2,9 +2,36 @@
 
 namespace DependencyInjectionWorkshop.Models
 {
+    public class FailedCounterDecorator : IAuthenticationService
+    {
+        private readonly IAuthenticationService _authentication;
+        private readonly IFailedCounter _failedCounter;
+
+        public FailedCounterDecorator(IAuthenticationService authentication, IFailedCounter failedCounter)
+        {
+            _authentication = authentication;
+            _failedCounter = failedCounter;
+        }
+
+        public bool Verify(string accountId, string password, string otp)
+        {
+            var isValid = _authentication.Verify(accountId, password, otp);
+            if (isValid) Reset(accountId);
+
+            return isValid;
+        }
+
+        private void Reset(string accountId)
+        {
+            _failedCounter.Reset(accountId);
+        }
+    }
+
     public class Authentication : IAuthenticationService
     {
         private readonly IFailedCounter _failedCounter;
+
+        private readonly FailedCounterDecorator _failedCounterDecorator;
         private readonly IHash _hash;
         private readonly ILogger _logger;
         private readonly IOtpService _otpService;
@@ -15,6 +42,7 @@ namespace DependencyInjectionWorkshop.Models
         public Authentication(IFailedCounter failedCounter, ILogger logger, IOtpService otpService,
             IProfile profile, IHash hash)
         {
+            //_failedCounterDecorator = new FailedCounterDecorator(this);
             _failedCounter = failedCounter;
             _logger = logger;
             _otpService = otpService;
@@ -25,6 +53,7 @@ namespace DependencyInjectionWorkshop.Models
 
         public Authentication()
         {
+            //_failedCounterDecorator = new FailedCounterDecorator(this);
             _profile = new ProfileDao();
             _hash = new Sha256Adapter();
             _otpService = new OtpService();
@@ -47,11 +76,9 @@ namespace DependencyInjectionWorkshop.Models
 
             //compare
             if (passwordFromDb == hashedPassword && currentOtp == otp)
-            {
-                _failedCounter.Reset(accountId);
+                //_failedCounterDecorator.Reset(accountId);
 
                 return true;
-            }
 
             //失敗
             _failedCounter.AddFailedCount(accountId);
