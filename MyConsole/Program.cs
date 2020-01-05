@@ -1,5 +1,6 @@
 ﻿using System;
 using Autofac;
+using Autofac.Extras.DynamicProxy;
 using DependencyInjectionWorkshop.Models;
 
 namespace MyConsole
@@ -32,84 +33,25 @@ namespace MyConsole
             builder.RegisterType<FakeOtp>().As<IOtpService>();
             builder.RegisterType<FakeHash>().As<IHash>();
             builder.RegisterType<FakeLogger>().As<ILogger>();
-            builder.RegisterType<FakeFailedCounter>().As<IFailedCounter>();
+            builder.RegisterType<FakeFailedCounter>().As<IFailedCounter>()
+                .EnableInterfaceInterceptors()
+                .InterceptedBy(typeof(AuditLogInterceptor));
             builder.RegisterType<FakeSlack>().As<INotification>();
             builder.RegisterType<FakeContext>().As<IContext>().SingleInstance();
-            builder.RegisterType<AuthenticationService>().As<IAuthentication>();
+            builder.RegisterType<AuditLogInterceptor>();
+            builder.RegisterType<AuthenticationService>().As<IAuthentication>()
+                .EnableInterfaceInterceptors()
+                .InterceptedBy(typeof(AuditLogInterceptor));
+
 
             builder.RegisterDecorator<FailedCounterDecorator, IAuthentication>();
             builder.RegisterDecorator<LogDecorator, IAuthentication>();
             builder.RegisterDecorator<NotificationDecorator, IAuthentication>();
             //builder.RegisterDecorator<LogMethodInfoDecorator, IAuthentication>();
-            builder.RegisterDecorator<AuditLogDecorator, IAuthentication>();
+            //builder.RegisterDecorator<AuditLogDecorator, IAuthentication>();
 
 
             _container = builder.Build();
-        }
-    }
-
-    internal class AuditLogDecorator : AuthenticationDecoratorBase
-    {
-        private readonly ILogger _logger;
-        private IContext _context;
-
-        public AuditLogDecorator(IAuthentication authentication, ILogger logger, IContext context) : base(authentication)
-        {
-            _logger = logger;
-            _context = context;
-        }
-
-        public override bool Verify(string accountId, string password, string otp)
-        {
-            var username = _context.GetUser().Name;
-            _logger.Info($"user {username} | parameter {accountId} | {password} | {otp}");
-            var isValid = base.Verify(accountId, password, otp);
-            _logger.Info($"return value:{isValid}");
-            return isValid;
-        }
-    }
-
-    public interface IContext
-    {
-        User GetUser();
-        void SetUser(string userName);
-    }
-
-    public class User
-    {
-        public string Name { get; set; }
-    }
-
-    internal class FakeContext : IContext
-    {
-        private User _user;
-
-        public User GetUser()
-        {
-            return _user;
-        }
-
-        public void SetUser(string userName)
-        {
-            _user = new User {Name = userName};
-        }
-    }
-
-    internal class LogMethodInfoDecorator : AuthenticationDecoratorBase
-    {
-        private readonly ILogger _logger;
-
-        public LogMethodInfoDecorator(IAuthentication authentication, ILogger logger) : base(authentication)
-        {
-            _logger = logger;
-        }
-
-        public override bool Verify(string accountId, string password, string otp)
-        {
-            _logger.Info($"parameter {accountId} | {password} | {otp}");
-            var isValid = base.Verify(accountId, password, otp);
-            _logger.Info($"return value {isValid}");
-            return isValid;
         }
     }
 
@@ -119,19 +61,6 @@ namespace MyConsole
         public void Info(string message)
         {
             Console.WriteLine($"logger: {message}");
-        }
-    }
-
-    internal class FakeSlack : INotification
-    {
-        public void Notify(string accountId, string message)
-        {
-            PushMessage($"{nameof(Notify)}, accountId:{accountId}, message:{message}");
-        }
-
-        public void PushMessage(string message)
-        {
-            Console.WriteLine(message);
         }
     }
 
@@ -189,6 +118,18 @@ namespace MyConsole
         {
             Console.WriteLine($"{nameof(FakeProfile)}.{nameof(GetPassword)}({accountId})");
             return "my hashed password";
+        }
+    }
+    internal class FakeSlack : INotification
+    {
+        public void Notify(string accountId, string message)
+        {
+            PushMessage($"{nameof(Notify)}, accountId:{accountId}, message:{message}");
+        }
+
+        public void PushMessage(string message)
+        {
+            Console.WriteLine(message);
         }
     }
 }
