@@ -46,6 +46,7 @@ namespace DependencyInjectionWorkshop.Models
             }
             else
             {
+                Notify($"account:{accountId} try to login failed");
                 return false;
             }
         }
