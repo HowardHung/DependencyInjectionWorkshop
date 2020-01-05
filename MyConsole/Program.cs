@@ -27,7 +27,7 @@ namespace MyConsole
             _notification = new FakeSlack();
             _failedCounter = new FakeFailedCounter();
             _authentication =
-                new Authentication(_failedCounter, _logger, _otpService, _profile, _hash);
+                new Authentication(_otpService, _profile, _hash);
 
             _authentication = new FailedCounterDecorator(_authentication, _failedCounter);
             _authentication = new LogDecorator(_authentication, _logger, _failedCounter);
