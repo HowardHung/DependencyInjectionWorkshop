@@ -1,29 +1,29 @@
 ﻿using SlackAPI;
 using System;
-using System.Data;
-using System.Data.SqlClient;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
-using Dapper;
 
 namespace DependencyInjectionWorkshop.Models
 {
     public class AuthenticationService
     {
+        private readonly ProfileDao _profileDao = new ProfileDao();
+
+        public AuthenticationService()
+        {
+        }
+
         public bool Verify(string accountId, string password, string otp)
         {
 
             var httpClient = new HttpClient() { BaseAddress = new Uri("http://joey.com/") };
             //check lock state
-            var isLockedResponse = httpClient.PostAsJsonAsync("api/failedCounter/IsLocked", accountId).Result;
-            isLockedResponse.EnsureSuccessStatusCode();
-            var isLocked = isLockedResponse.Content.ReadAsAsync<bool>().Result;
+            var isLocked = GetAccountIsLocked(accountId, httpClient);
             if (isLocked)
             {
                 throw new FailedTooManyTimesException() { AccountId = accountId };
             }
-            var passwordFromDb = GetPasswordFromDb(accountId);
+            var passwordFromDb = _profileDao.GetPasswordFromDb(accountId);
 
             var hashedPassword = GetHashedPassword(password);
             var currentOtp = GetCurrentOtp(accountId, httpClient);
@@ -37,11 +37,19 @@ namespace DependencyInjectionWorkshop.Models
                 //failed
                 AddFailedCount(accountId, httpClient);
                 //log
-                LogFailCount(accountId);
+                LogFailCount(accountId, httpClient);
 
                 Notify(accountId);
                 return false;
             }
+        }
+
+        private static bool GetAccountIsLocked(string accountId, HttpClient httpClient)
+        {
+            var isLockedResponse = httpClient.PostAsJsonAsync("api/failedCounter/IsLocked", accountId).Result;
+            isLockedResponse.EnsureSuccessStatusCode();
+            var isLocked = isLockedResponse.Content.ReadAsAsync<bool>().Result;
+            return isLocked;
         }
 
         private static void Notify(string accountId)
@@ -51,8 +59,10 @@ namespace DependencyInjectionWorkshop.Models
             slackClient.PostMessage(response1 => { }, "my channel", message, "my bot name");
         }
 
-        private static void LogFailCount(string accountId)
+        private static void LogFailCount(string accountId, HttpClient httpClient)
         {
+
+            var failedCountResponse = httpClient.PostAsJsonAsync("api/failedCounter/Add", accountId).Result;
             var failedCount = failedCountResponse.Content.ReadAsAsync<int>().Result;
             var logger = NLog.LogManager.GetCurrentClassLogger();
             logger.Info($"accountId:{accountId} failed times:{failedCount}");
@@ -97,18 +107,6 @@ namespace DependencyInjectionWorkshop.Models
 
             var hashedPassword = hash.ToString();
             return hashedPassword;
-        }
-
-        private static string GetPasswordFromDb(string accountId)
-        {
-            string passwordFromDb;
-            using (var connection = new SqlConnection("my connection string"))
-            {
-                passwordFromDb = connection.Query<string>("spGetUserPassword", new {Id = accountId},
-                    commandType: CommandType.StoredProcedure).SingleOrDefault();
-            }
-
-            return passwordFromDb;
         }
     }
 
