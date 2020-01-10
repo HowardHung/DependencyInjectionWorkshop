@@ -10,17 +10,27 @@ namespace DependencyInjectionWorkshop.Models
 {
     public class AuthenticationService
     {
-        private readonly ProfileDao _profileDao;
-        private readonly Sha256Adapter _sha256Adapter;
+        private readonly IProfile _profile;
+        private readonly IHash _hash;
         private readonly OtpService _otpService;
         private readonly SlackAdapter _slackAdapter;
         private readonly FailCounter _failCounter;
         private readonly NLogAdapter _nLogAdapter;
 
+        public AuthenticationService(IProfile profile, IHash hash, OtpService otpService, SlackAdapter slackAdapter, FailCounter failCounter, NLogAdapter nLogAdapter)
+        {
+            _profile = profile;
+            _hash = hash;
+            _otpService = otpService;
+            _slackAdapter = slackAdapter;
+            _failCounter = failCounter;
+            _nLogAdapter = nLogAdapter;
+        }
+
         public AuthenticationService()
         {
-            _profileDao = new ProfileDao();
-            _sha256Adapter = new Sha256Adapter();
+            _profile = new ProfileDao();
+            _hash = new Sha256Adapter();
             _otpService = new OtpService();
             _slackAdapter = new SlackAdapter();
             _failCounter = new FailCounter();
@@ -35,9 +45,9 @@ namespace DependencyInjectionWorkshop.Models
             {
                 throw new FailedTooManyTimesException() { AccountId = accountId };
             }
-            var passwordFromDb = _profileDao.GetPasswordFromDb(accountId);
+            var passwordFromDb = _profile.GetPasswordFromDb(accountId);
 
-            var hashedPassword = _sha256Adapter.GetHashedPassword(password);
+            var hashedPassword = _hash.GetHashedPassword(password);
             var currentOtp = _otpService.GetCurrentOtp(accountId);
             if (passwordFromDb==hashedPassword&&currentOtp == otp)
             {
