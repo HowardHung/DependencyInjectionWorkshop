@@ -58,10 +58,21 @@ namespace DependencyInjectionWorkshop.Models
 
         private static void LogFailCount(string accountId, HttpClient httpClient)
         {
-            var failedCountResponse = httpClient.PostAsJsonAsync("api/failedCounter/Add", accountId).Result;
-            var failedCount = failedCountResponse.Content.ReadAsAsync<int>().Result;
+            var failedCount = GetFailedCount(accountId, httpClient);
+            Log(accountId, failedCount);
+        }
+
+        private static void Log(string accountId, int failedCount)
+        {
             var logger = NLog.LogManager.GetCurrentClassLogger();
             logger.Info($"accountId:{accountId} failed times:{failedCount}");
+        }
+
+        private static int GetFailedCount(string accountId, HttpClient httpClient)
+        {
+            var failedCountResponse = httpClient.PostAsJsonAsync("api/failedCounter/Add", accountId).Result;
+            var failedCount = failedCountResponse.Content.ReadAsAsync<int>().Result;
+            return failedCount;
         }
     }
 
