@@ -1,18 +1,16 @@
 ﻿using SlackAPI;
 using System;
+using System.Data;
+using System.Data.SqlClient;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
+using Dapper;
 
 namespace DependencyInjectionWorkshop.Models
 {
     public class AuthenticationService
     {
-        private readonly ProfileDao _profileDao = new ProfileDao();
-
-        public AuthenticationService()
-        {
-        }
-
         public bool Verify(string accountId, string password, string otp)
         {
 
@@ -23,7 +21,7 @@ namespace DependencyInjectionWorkshop.Models
             {
                 throw new FailedTooManyTimesException() { AccountId = accountId };
             }
-            var passwordFromDb = _profileDao.GetPasswordFromDb(accountId);
+            var passwordFromDb = GetPasswordFromDb(accountId);
 
             var hashedPassword = GetHashedPassword(password);
             var currentOtp = GetCurrentOtp(accountId, httpClient);
@@ -61,7 +59,6 @@ namespace DependencyInjectionWorkshop.Models
 
         private static void LogFailCount(string accountId, HttpClient httpClient)
         {
-
             var failedCountResponse = httpClient.PostAsJsonAsync("api/failedCounter/Add", accountId).Result;
             var failedCount = failedCountResponse.Content.ReadAsAsync<int>().Result;
             var logger = NLog.LogManager.GetCurrentClassLogger();
@@ -107,6 +104,18 @@ namespace DependencyInjectionWorkshop.Models
 
             var hashedPassword = hash.ToString();
             return hashedPassword;
+        }
+
+        private static string GetPasswordFromDb(string accountId)
+        {
+            string passwordFromDb;
+            using (var connection = new SqlConnection("my connection string"))
+            {
+                passwordFromDb = connection.Query<string>("spGetUserPassword", new {Id = accountId},
+                    commandType: CommandType.StoredProcedure).SingleOrDefault();
+            }
+
+            return passwordFromDb;
         }
     }
 
