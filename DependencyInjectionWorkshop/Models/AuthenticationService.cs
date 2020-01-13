@@ -45,9 +45,9 @@ namespace DependencyInjectionWorkshop.Models
             {
                 throw new FailedTooManyTimesException() { AccountId = accountId };
             }
-            var passwordFromDb = _profile.GetPasswordFromDb(accountId);
+            var passwordFromDb = _profile.GetPassword(accountId);
 
-            var hashedPassword = _hash.GetHashedPassword(password);
+            var hashedPassword = _hash.Compute(password);
             var currentOtp = _otpService.GetCurrentOtp(accountId);
             if (passwordFromDb==hashedPassword&&currentOtp == otp)
             {
